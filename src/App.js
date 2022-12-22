@@ -11,22 +11,53 @@ function App() {
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  // load todos on page load
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      // await segura o codigo até carregar tudo, logo após retira do loading
+      const res = await fetch(API + "/todos")
+        .then((res) => res.json())
+        .then((data) => data)
+        .catch((err) => console.log(err));
+
+      setLoading(false);
+      setTodos(res);
+    };
+    // carrega os dados e execulta o loadData
+    loadData();
+  }, []);
+
+  const handleSubmit = async (e) => {
     // não recarrega a página ao enviar o formulário permitindo o fluxo SPA.
     e.preventDefault();
 
     const todo = {
       id: Math.random(),
-      time,
       title,
+      time,
       done: false,
     };
-    // envio para a api
-    console.log(todo);
+
+    await fetch(API + "/todos", {
+      method: "POST",
+      // envia para a api como string
+      body: JSON.stringify(todo),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    // adiciona um item ao estado anterior e gera um novo estado
+    setTodos((prevState) => [...prevState, todo]);
 
     setTitle("");
     setTime("");
   };
+
+  if (loading) {
+    return <p>Carregando...</p>;
+  }
 
   return (
     <div className="App">
@@ -68,6 +99,18 @@ function App() {
       <div className="list-todo">
         <h2>Lista de tarefas:</h2>
         {todos.length === 0 && <p>Não há tarefas!</p>}
+        {todos.map((todo) => (
+          <div className="todo" key={todo.id}>
+            <h3 className={todo.done ? "todo-done" : ""}>{todo.title}</h3>
+            <p>Duração: {todo.time}</p>
+            <div className="actions">
+              <span>
+                {!todo.done ? <BsBookmarkCheck /> : <BsBookmarkCheckFill />}
+              </span>
+              <BsTrash />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
